@@ -23,7 +23,7 @@
         <v-row>
           <v-col>
             <!-- 時刻選択 -->
-            <v-time-picker format="24hr" v-mdoel="time" />
+            <v-time-picker format="24hr" v-model="time" />
           </v-col>
           <v-col>
             <!-- 日付選択 -->
@@ -37,7 +37,6 @@
                 (v) =>
                   !dates.map((d) => d.from.toFormat('yyyy-MM-dd')).includes(v)
               "
-            />
             />
           </v-col>
         </v-row>
@@ -64,7 +63,7 @@
 import { DateTime } from 'luxon'
 import DateListItem from './DateListItem.vue'
 export default {
-  //modelは親に渡す値の通り道
+  //modelは親に渡す値の通り道 key
   model: {
     prop: 'value',
     event: 'change',
@@ -104,7 +103,8 @@ export default {
         minute: time.minute,
       })
       // ...はスプレット構文：...配列名で配列の中身を展開できる
-      // この場合はthis.dates配列の中に元々の値を展開し、さらに入力されたdateを定義している
+      // この場合はthis.dates配列の中に元々の値を展開し、さらに入力された{id:val, from:val}を加えた配列を作成
+      // [ date ]
       this.dates = [
         ...this.dates,
         {
@@ -130,7 +130,6 @@ export default {
       this.title = this.value.title
       this.description = this.value.description
     },
-    // changeEventメソッドで使用されるパラメータ(title,description)の変化を監視し
     // 更新があれば、即座にchangeEvent()を発生させる
     title() {
       this.changeEvent()

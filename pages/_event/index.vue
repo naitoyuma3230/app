@@ -43,6 +43,7 @@
             <td>{{ date.from.toFormat('yyyy/MM/dd') }}</td>
             <td>
               {{ date.from.toFormat('HH:mm') }} ~
+              <!-- &&の使い方として,date.toが真(nullでない)の時に右式が実行される -->
               {{ date.to && date.to.toFormat('HH:mm') }}
             </td>
             <td v-for="user in votes" :key="user.id" class="text-center">
@@ -89,7 +90,10 @@
           <v-toolbar-title>Vote</v-toolbar-title>
           <v-spacer />
           <v-toolbar-items>
-            <v-btn text> Save </v-btn>
+            <v-btn text @click="saveMyVote">
+              Save
+              <v-icon right> mdi-checkbox-marked-circle </v-icon>
+            </v-btn>
           </v-toolbar-items>
         </v-toolbar>
         <v-card-text>
@@ -153,6 +157,7 @@ import { DateTime } from 'luxon'
 export default {
   data() {
     return {
+      // モーダルの状態やモーダル内で表示されるパラメータ
       showVoteDialog: false,
       myId: 0,
       myName: '',
@@ -163,11 +168,31 @@ export default {
     openVoteDialog(id, name, vote) {
       this.myId = id || 0
       this.myName = name || ''
+      // ...vote: vote: { 1: 2, 2: 2, 3: 1,}を展開して{}内に展開
       this.myVote = { ...vote }
       this.showVoteDialog = true
     },
     closeVoteDialog() {
       this.showVoteDialog = false
+    },
+    saveMyVote() {
+      const eventId = this.$route.params.event
+      this.$store.dispatch('setEvent', {
+        id: eventId,
+        votes: [
+          ...this.votes.filter((v) => v.id !== this.myId),
+          {
+            id: +new Date(),
+            name: this.myName,
+            vote: this.myVote,
+          },
+        ],
+      })
+      this.closeVoteDialog()
+      // 投票モーダルを閉じたら表示用の変数をクリアしておく
+      this.myId = 0
+      this.myName = ''
+      this.myVote = {}
     },
   },
   head() {
@@ -177,65 +202,19 @@ export default {
   },
   computed: {
     eventId() {
-      return 'eventId'
+      return this.$store.getters.eventId
     },
     title() {
-      return 'タイトル'
+      return this.$store.getters.title
     },
     description() {
-      return 'ほげほげほげほげほげ'
+      return this.$store.getters.description
     },
     dates() {
-      // 2章で実装したイベント編集コンポーネントのdatesと同じデータ構造
-      return [
-        {
-          id: 1,
-          from: DateTime.fromISO('2021-01-01').set({ hour: 15 }),
-        },
-        {
-          id: 2,
-          from: DateTime.fromISO('2021-01-02').set({ hour: 15 }),
-        },
-        {
-          id: 3,
-          from: DateTime.fromISO('2021-01-03').set({ hour: 15 }),
-        },
-      ]
+      return this.$store.getters.dates
     },
     votes() {
-      // HELLO
-      // 投票データ
-      // voteは { [dateのid]: レート } として保持
-      // レートは 2, 1, 0 で、それぞれ ○, △, ✕ の表示に対応している
-      return [
-        {
-          id: 1,
-          name: 'れい',
-          vote: {
-            1: 2,
-            2: 2,
-            3: 1,
-          },
-        },
-        {
-          id: 2,
-          name: 'りお',
-          vote: {
-            1: 0,
-            2: 2,
-            3: 0,
-          },
-        },
-        {
-          id: 3,
-          name: 'かえで',
-          vote: {
-            1: 1,
-            2: 2,
-            3: 0,
-          },
-        },
-      ]
+      return this.$store.getters.votes
     },
     // 各スケジュール毎に、{日付id:投票情報(日付idに対応する投票idの得点の総和)}のオブジェクトを作成
     // vに入れる。vはオブジェクトの配列となる
@@ -262,6 +241,25 @@ export default {
       // 1位の点数が0だったら何もハイライトしない
       return highlights[0] !== 0 ? highlights : []
     },
+  },
+  beforeMount() {
+    // URLからイベントデータを取得する
+    const eventId = this.$route.params.event
+
+    if (eventId !== this.eventId) {
+      // 前に表示していたイベントがあるかもしれないので消す
+      this.$store.dispatch('clearEvent')
+      // Firestoreからデータを取得してストアにセットする
+      this.$store
+        .dispatch('fetchEvent', eventId)
+        // actionが失敗したらNuxtの404エラーページを表示する
+        .catch((_) => {
+          this.$nuxt.error({
+            statusCode: 404,
+            message: 'Event Not Found',
+          })
+        })
+    }
   },
 }
 </script>

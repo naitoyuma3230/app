@@ -39,7 +39,26 @@ export default {
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
-  modules: [],
+  modules: [
+    [
+      '@nuxtjs/firebase',
+      {
+        config: {
+          apiKey: 'AIzaSyA5iq2E-dnOATaE_eYMH-RzOMWvxWj0bJo',
+          authDomain: 'schedule-app-e6af2.firebaseapp.com',
+          projectId: 'schedule-app-e6af2',
+          storageBucket: 'schedule-app-e6af2.appspot.com',
+          messagingSenderId: '886371450276',
+          appId: '1:886371450276:web:3d8946c2a8b9ba8ea21531',
+          measurementId: 'G-6KRDMBW1NL',
+        },
+        services: {
+          firestore: true,
+          analytics: true,
+        },
+      },
+    ],
+  ],
 
   // Vuetify module configuration: https://go.nuxtjs.dev/config-vuetify
   vuetify: {
